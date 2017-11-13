@@ -1,11 +1,30 @@
 import os
 import torch
 import pickle
+from torch.autograd import Variable
+import numpy as np
+
+def to_var(x, *args, **kwargs):
+
+    if torch.cuda.is_available():
+        x = Variable(x, *args, **kwargs).cuda()
+    else:
+        x = Variable(x, *args, **kwargs)
+
+    return x
+
+def to_tensor(x, *args, **kwargs):
+
+    if torch.cuda.is_available():
+        x = torch.from_numpy(x).cuda()
+    else:
+        x = torch.from_numpy(x)
+    return x
 
 ########################## Pickle helper ###############################
 
 
-def read_pickle(path, G, G_solver, D_, D_solver, state):
+def read_pickle(path, model, solver):
     try:
 
         files = os.listdir(path)
@@ -14,41 +33,26 @@ def read_pickle(path, G, G_solver, D_, D_solver, state):
         recent_iter = str(file_list[-1])
         print(recent_iter, path)
 
-        with open(path + "/G_" + recent_iter + ".pkl", "rb") as f:
-            G.load_state_dict(torch.load(f))
-        with open(path + "/G_optim_" + recent_iter + ".pkl", "rb") as f:
-            G_solver.load_state_dict(torch.load(f))
-        with open(path + "/D_" + recent_iter + ".pkl", "rb") as f:
-            D_.load_state_dict(torch.load(f))
-        with open(path + "/D_optim_" + recent_iter + ".pkl", "rb") as f:
-            D_solver.load_state_dict(torch.load(f))
-
-        with open(path + "/state_" + recent_iter + ".pkl", "rb") as f:
-            load_state = pickle.load(f)
-            state['k'] = load_state['k']
-        print(state, "in uitls")
+        with open(path + "/model_" + recent_iter + ".pkl", "rb") as f:
+            model.load_state_dict(torch.load(f))
+        with open(path + "/solver_" + recent_iter + ".pkl", "rb") as f:
+            solver.load_state_dict(torch.load(f))
 
     except Exception as e:
 
-        print("fail try", e)
+        print("fail read pickle", e)
 
 
 
-def save_new_pickle(path, iteration, G, G_solver, D_, D_solver, state):
+def save_new_pickle(path, iteration, model, solver):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    with open(path + "/G_" + str(iteration) + ".pkl", "wb") as f:
-        torch.save(G.state_dict(), f)
-    with open(path + "/G_optim_" + str(iteration) + ".pkl", "wb") as f:
-        torch.save(G_solver.state_dict(), f)
-    with open(path + "/D_" + str(iteration) + ".pkl", "wb") as f:
-        torch.save(D_.state_dict(), f)
-    with open(path + "/D_optim_" + str(iteration) + ".pkl", "wb") as f:
-        torch.save(D_solver.state_dict(), f)
+    with open(path + "/model_" + str(iteration) + ".pkl", "wb") as f:
+        torch.save(model.state_dict(), f)
+    with open(path + "/solver_" + str(iteration) + ".pkl", "wb") as f:
+        torch.save(solver.state_dict(), f)
 
-    with open(path + "/state_" + str(iteration) + ".pkl", "wb") as f:
-        pickle.dump(state, f)
 
 ########################## path helper ###############################
 
